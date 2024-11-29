@@ -1,5 +1,5 @@
 import logging
-
+import nfc_reader
 # Initialize logger
 logging.basicConfig(level=logging.DEBUG)
 
@@ -32,8 +32,14 @@ class State0(State):
         logging.info("Initializing RFID reader...")
         
         # Simulate RFID reader initialization (replace with actual initialization code)
-        init_successful = True  # Simulate success
-        
+        reader=nfc_reader.NFCReader()
+        init_successful = False
+        try:
+            reader.config_pn532()
+            init_successful = True  # Set to True if no exception occurs
+        except Exception as e:
+            init_successful= False
+
         if init_successful:
             logging.info("RFID reader initialized successfully.")
             self.machine.current_state = 'State1'  # Transition to State1
@@ -41,7 +47,7 @@ class State0(State):
             logging.error("Failed to initialize RFID reader.")
             self.machine.current_state = 'State5'  # Transition to State5
 
-class State1(State):
+class State1(State): ##hier weitermachen umbeidngt !!!!!!!!!!!!!!!
     def run(self):
         logging.info("Waiting for RFID card...")
         
