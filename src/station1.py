@@ -1,8 +1,28 @@
 import logging
 import nfc_reader
 import sqlite3
+import sys
+import os
 # Initialize logger
-logging.basicConfig(level=logging.DEBUG)
+
+logger = logging.getLogger(__name__)
+
+# Create a logger
+log_file_path = os.path.expanduser('~/P5.1/src/station1.log')
+logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
+logger.setLevel(logging.DEBUG)  # Set the desired logging level
+
+# Create a StreamHandler for stdout
+handler = logging.StreamHandler(sys.stdout)
+
+# Create a formatter and set it for the handler
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+handler.setFormatter(formatter)
+
+# Add the handler to the logger
+logger.addHandler(handler)
+
+#logger.info("test")
 
 class StateMachine:
     def __init__(self):
@@ -30,34 +50,35 @@ class State:
 
 class State0(State):
     def run(self):
-        logging.info("Initializing RFID reader...")
+        logger.info("Initializing RFID reader...")
         
         # Simulate RFID reader initialization (replace with actual initialization code)
         self.machine.reader = nfc_reader.NFCReader()
+        self.machine.reader.add_logger('~/P5.1/src/station1.log') ##ändern !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         init_successful = False
         try:
             self.machine.reader.config()
             init_successful = True  # Set to True if no exception occurs
         except Exception as e:
-            logging.error(f"Error initializing reader: {e}")
+            logger.error(f"Error initializing reader: {e}")
             init_successful = False
 
         if init_successful:
-            logging.info("RFID reader initialized successfully.")
+            logger.info("RFID reader initialized successfully.")
             self.machine.current_state = 'State1'  # Transition to State1
         else:
-            logging.error("Failed to initialize RFID reader.")
+            logger.error("Failed to initialize RFID reader.")
             self.machine.current_state = 'State5'  # Transition to State5
 
 
 class State1(State): 
     def run(self):
-        logging.info("Waiting for RFID card...")
+        logger.info("Waiting for RFID card...")
         
         # Zugriff auf den Reader
         reader = self.machine.reader
         if reader is None:
-            logging.error("No RFID reader available!")
+            logger.error("No RFID reader available!")
             self.machine.current_state = 'State5'  # Transition to State5
             return
         
@@ -67,27 +88,27 @@ class State1(State):
             print(".", end="")
             if self.machine.uid is None:
                 continue
-            logging.info("Found card with UID: %s", [hex(i) for i in self.machine.uid])
+            logger.info("Found card with UID: %s", [hex(i) for i in self.machine.uid])
             break
         
         if self.machine.uid is None:
-            logging.warning("No card detected. Retrying...")
+            logger.warning("No card detected. Retrying...")
             self.machine.current_state = 'State1'  # Wait again
         else:
-            logging.info(f"Found card with UID: {[hex(i) for i in self.machine.uid]}") 
+            logger.info(f"Found card with UID: {[hex(i) for i in self.machine.uid]}") 
             self.machine.current_state = 'State2'  # Transition to State2
 
 
 class State2(State):
     def run(self):
-        logging.info("Writing Bottle ID to card...")
+        logger.info("Writing Bottle ID to card...")
 
         # Zugriff auf den Reader und die UID
         reader = self.machine.reader
         uid = self.machine.uid
         
         if reader is None or uid is None:
-            logging.error("No reader or card UID available!")
+            logger.error("No reader or card UID available!")
             self.machine.current_state = 'State1'  # Zurück zu State1, um auf eine neue Karte zu warten
             return
 
@@ -112,11 +133,11 @@ class State2(State):
             if result:
                 self.machine.flaschen_id = result[0]
             else:
-                logging.error("No untagged bottles available!")
+                logger.error("No untagged bottles available!")
                 self.machine.current_state = 'State1'  # Zurück zu State1, um es erneut zu versuchen
                 return
         except Exception as e:
-            logging.error(f"Database error: {e}")
+            logger.error(f"Database error: {e}")
             self.machine.current_state = 'State1'  # Zurück zu State1
             return
 
@@ -126,7 +147,7 @@ class State2(State):
             data = [0x00] * 16  # Initialisiere den Block mit 16 Null-Bytes
             data[0] = self.machine.flaschen_id & 0xFF  # Schreibe die Flaschen_ID als erstes Byte
         except Exception as e:
-            logging.error(f"Error preparing block data: {e}")
+            logger.error(f"Error preparing block data: {e}")
             self.machine.current_state = 'State1'
             return
 
@@ -134,21 +155,21 @@ class State2(State):
         try:
             write_successful = reader.write_block(uid, block_number, data)
         except Exception as e:
-            logging.error(f"Error writing to card: {e}")
+            logger.error(f"Error writing to card: {e}")
             write_successful = False
 
         if write_successful:
-            logging.info(f"Successfully wrote Bottle ID {self.machine.flaschen_id} to card.")
+            logger.info(f"Successfully wrote Bottle ID {self.machine.flaschen_id} to card.")
 
             self.machine.current_state = 'State3'  # Übergang zu State3
         else:
-            logging.error("Failed to write to card. Waiting for a new card.")
+            logger.error("Failed to write to card. Waiting for a new card.")
             self.machine.current_state = 'State1'  # Zurück zu State1
 
 
 class State3(State):
     def run(self):
-        logging.info("Saving Bottle ID and timestamp to database...")
+        logger.info("Saving Bottle ID and timestamp to database...")
         
         # Simulate database write (replace with actual database code)
                     
@@ -168,30 +189,30 @@ class State3(State):
             conn.close()
             db_write_successful = True  
         except Exception as e:
-            logging.error(f"Error updating database: {e}")
+            logger.error(f"Error updating database: {e}")
         
         
         if db_write_successful:
-            logging.info("Successfully saved to database.")
+            logger.info("Successfully saved to database.")
             self.machine.current_state = 'State4'  # Transition to State4
         else:
-            logging.error("Failed to save data to database.")
+            logger.error("Failed to save data to database.")
             self.machine.current_state = 'State5'  # Transition to State5
 
 class State4(State):
     def run(self):
-        logging.info("Successfully completed the process! Returning to State1.")
+        logger.info("Successfully completed the process! Returning to State1.")
         quit()
         # Transition back to State1 - probably not hepful while debugging
         #self.machine.current_state = 'State1'  
 
 class State5(State):
     def run(self):
-        logging.error("Process failed at some point. Please check the logs.")
+        logger.error("Process failed at some point. Please check the logs.")
         self.machine.current_state = 'State5'  # End of process
 
 # Main execution
 if __name__ == '__main__':
     machine = StateMachine()
     machine.run()
-    logging.info("Stopped Execution. Please rerun the program to start again.")
+    logger.info("Stopped Execution. Please rerun the program to start again.")
