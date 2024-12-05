@@ -52,8 +52,7 @@ class State0(State):
     def run(self):
         logger.info("Initializing RFID reader...")
         
-        # Simulate RFID reader initialization (replace with actual initialization code)
-        self.machine.reader = nfc_reader.NFCReader(logger=logger) ##ändern !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.machine.reader = nfc_reader.NFCReader(logger=logger) 
         init_successful = False
         try:
             self.machine.reader.config()
