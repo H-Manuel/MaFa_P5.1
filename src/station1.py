@@ -172,6 +172,7 @@ class State3(State):
         # Simulate database write (replace with actual database code)
                     
         # SQL: Aktualisiere die Datenbank, um die Flasche als getaggt zu markieren
+        db_write_successful=False
         try:
             db_path = "../data/flaschen_database.db"
             conn = sqlite3.connect(db_path)
