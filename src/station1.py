@@ -53,8 +53,7 @@ class State0(State):
         logger.info("Initializing RFID reader...")
         
         # Simulate RFID reader initialization (replace with actual initialization code)
-        self.machine.reader = nfc_reader.NFCReader()
-        self.machine.reader.add_logger('~/P5.1/src/station1.log') ##ändern !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        self.machine.reader = nfc_reader.NFCReader(logger=logger) ##ändern !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         init_successful = False
         try:
             self.machine.reader.config()

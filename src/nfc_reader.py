@@ -33,7 +33,8 @@ class NFCReaderInterface(ABC):
 
 
 class NFCReader(NFCReaderInterface):
-    def __init__(self):
+    def __init__(self, logger=None):
+        self.logger = logger or logging.getLogger(__name__)  # Verwende den übergebenen Logger oder einen Standard-Logger
         self._pn532 = self.config()
 
     def __getattr__(self, name):
@@ -57,13 +58,6 @@ class NFCReader(NFCReaderInterface):
         except Exception as e:
             self.logger.error("Failed to configure PN532: %s", e)
             raise
-
-    def add_logger(self, path): #naja geht nicht wriklich !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        if not logging.getLogger().hasHandlers():
-            log_file_path = os.path.expanduser(path)
-            logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
-        self.logger = logging.getLogger(__name__)
-        self.logger.setLevel(logging.DEBUG)
 
 
     def read_block(self, uid, block_number):
