@@ -46,3 +46,19 @@ INFO:__main__:Granulat_ID: 3, Menge: 10.0
 INFO:__main__:Granulat_ID: 2, Menge: 23.0
 INFO:__main__:Granulat_ID: 2, Menge: 3.0
 INFO:__main__:Successfully completed the process! Returning to State1.
+INFO:__main__:Initializing RFID reader...
+INFO:__main__:Found PN532 with firmware version: 1.6
+INFO:__main__:Found PN532 with firmware version: 1.6
+INFO:__main__:RFID reader initialized successfully.
+INFO:__main__:Waiting for RFID card...
+INFO:__main__:Found card with UID: ['0x6d', '0xc1', '0xea', '0x36']
+INFO:__main__:Found card with UID: ['0x6d', '0xc1', '0xea', '0x36']
+INFO:__main__:Reading Bottle ID from card...
+INFO:__main__:Successfully read Bottle ID 26 from card.
+INFO:__main__:Processing Bottle ID and retrieving data...
+INFO:__main__:Found Rezept_ID 2 for Flaschen_ID 26.
+INFO:__main__:Granulate data for Rezept_ID 2:
+INFO:__main__:Granulat_ID: 1, Menge: 50.0
+INFO:__main__:Granulat_ID: 1, Menge: 44.0
+INFO:__main__:Granulat_ID: 1, Menge: 37.0
+INFO:__main__:Successfully completed the process! Returning to State1.
