@@ -3,12 +3,13 @@ import nfc_reader
 import sqlite3
 import sys
 import os
+import qrcode  ##Über pip einbinden !!!!!!!!!!!!!!!!!!!!!!!!!!
 # Initialize logger
 
 logger = logging.getLogger(__name__)
 
 # Create a logger
-log_file_path = os.path.expanduser('~/MaFa_P5.1/src/station1.log')
+log_file_path = os.path.expanduser('~/MaFa_P5.1/src/station3.log')
 logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)  # Set the desired logging level
 
@@ -99,104 +100,100 @@ class State1(State):
 
 class State2(State):
     def run(self):
-        logger.info("Writing Bottle ID to card...")
+        logger.info("Reading Bottle ID from card...")
 
         # Zugriff auf den Reader und die UID
         reader = self.machine.reader
         uid = self.machine.uid
-        
+
         if reader is None or uid is None:
             logger.error("No reader or card UID available!")
             self.machine.current_state = 'State1'  # Zurück zu State1, um auf eine neue Karte zu warten
             return
 
-        # SQL: Hole die erste ungetaggte Flaschen_ID
-        try:
-            
-            db_path = "../data/flaschen_database.db"
-            conn = sqlite3.connect(db_path)
-            cursor = conn.cursor()
+        # Blocknummer für das Auslesen festlegen
+        block_number = 2  # Zweiter Block des NFC-Tags, wo die Bottle ID gespeichert ist
 
-            query = """
-            SELECT Flaschen_ID
-            FROM Flasche
-            WHERE Tagged_Date IS 0
-            ORDER BY Flaschen_ID ASC
-            LIMIT 1;
-            """
-            cursor.execute(query)
-            result = cursor.fetchone()
-            conn.close()
-            
-            if result:
-                self.machine.flaschen_id = result[0]
-            else:
-                logger.error("No untagged bottles available!")
-                self.machine.current_state = 'State1'  # Zurück zu State1, um es erneut zu versuchen
+        # Versuche, den Block auszulesen
+        try:
+            block_data = reader.read_block(uid, block_number)
+
+            if block_data is None:
+                logger.error("Failed to read from card.")
+                self.machine.current_state = 'State1'  # Zurück zu State1
                 return
+
+            # Extrahiere die Flaschen-ID aus den Daten (erster Byte des Blocks)
+            self.machine.flaschen_id = block_data[0]
+            logger.info(f"Successfully read Bottle ID {self.machine.flaschen_id} from card.")
+
+            # Übergang zu State3
+            self.machine.current_state = 'State3'
         except Exception as e:
-            logger.error(f"Database error: {e}")
+            logger.error(f"Error reading from card: {e}")
             self.machine.current_state = 'State1'  # Zurück zu State1
-            return
 
-        # Blockdaten vorbereiten
-        try:
-            block_number = 2  # Zweiter Block des NFC-Tags
-            data = [0x00] * 16  # Initialisiere den Block mit 16 Null-Bytes
-            data[0] = self.machine.flaschen_id & 0xFF  # Schreibe die Flaschen_ID als erstes Byte
-        except Exception as e:
-            logger.error(f"Error preparing block data: {e}")
-            self.machine.current_state = 'State1'
-            return
-
-        # Schreibe die Daten auf den NFC-Tag
-        try:
-            write_successful = reader.write_block(uid, block_number, data)
-        except Exception as e:
-            logger.error(f"Error writing to card: {e}")
-            write_successful = False
-
-        if write_successful:
-            logger.info(f"Successfully wrote Bottle ID {self.machine.flaschen_id} to card.")
-
-            self.machine.current_state = 'State3'  # Übergang zu State3
-        else:
-            logger.error("Failed to write to card. Waiting for a new card.")
-            self.machine.current_state = 'State1'  # Zurück zu State1
 
 
 class State3(State):
     def run(self):
-        logger.info("Saving Bottle ID and timestamp to database...")
-        
-        # Simulate database write (replace with actual database code)
-                    
-        # SQL: Aktualisiere die Datenbank, um die Flasche als getaggt zu markieren
-        db_write_successful=False
+        logger.info("Processing Bottle ID and retrieving data...")
+
+        # Datenbankpfad
+        db_path = "../data/flaschen_database.db"
+
         try:
-            db_path = "../data/flaschen_database.db"
             conn = sqlite3.connect(db_path)
             cursor = conn.cursor()
 
-            update_query = """
-            UPDATE Flasche
-            SET Tagged_Date = CURRENT_TIMESTAMP
+            # 1. Suche Rezept_ID und Tagged_Date für die Flaschen_ID
+            query = """
+            SELECT Rezept_ID, Tagged_Date
+            FROM Flasche
             WHERE Flaschen_ID = ?;
             """
-            cursor.execute(update_query, (self.machine.flaschen_id,))
-            conn.commit()
+            cursor.execute(query, (self.machine.flaschen_id,))
+            result = cursor.fetchone()
+
+            if result is None:
+                logger.error(f"No data found for Flaschen_ID {self.machine.flaschen_id}.")
+                self.machine.current_state = 'State5'  # Übergang zu einem Fehlerzustand
+                conn.close()
+                return
+
+            rezept_id, tagged_date = result
+            logger.info(f"Found Rezept_ID {rezept_id} and Tagged_Date {tagged_date} for Flaschen_ID {self.machine.flaschen_id}.")
             conn.close()
-            db_write_successful = True  
+
+            # QR-Message erstellen
+            qr_message = f"Rezept_ID: {rezept_id}, Flaschen_ID: {self.machine.flaschen_id}, Tagged_Date: {tagged_date}"
+
+            # QRCode-Objekt erstellen
+            qr = qrcode.QRCode(
+                version=1,  # Größe des QR-Codes (1 = kleinste Größe)
+                error_correction=qrcode.constants.ERROR_CORRECT_L,  # Fehlerkorrekturstufe
+                box_size=10,  # Größe der einzelnen Boxen im QR-Code
+                border=4,  # Breite des Randes
+            )
+
+            # Daten hinzufügen
+            qr.add_data(qr_message)
+            qr.make(fit=True)
+
+            # QR-Code-Image erstellen
+            img = qr.make_image(fill="black", back_color="white")
+            qr_path = os.path.expanduser(f"~/MaFa_P5.1/src/QR_CODES/qrcode_{self.machine.flaschen_id}.png")
+
+            # Bild speichern
+            img.save(qr_path)
+            logger.info(f"QR-Code gespeichert unter {qr_path}.")
+
+            # Übergang zu einem nächsten Zustand nach erfolgreicher Verarbeitung
+            self.machine.current_state = 'State4'
+
         except Exception as e:
-            logger.error(f"Error updating database: {e}")
-        
-        
-        if db_write_successful:
-            logger.info("Successfully saved to database.")
-            self.machine.current_state = 'State4'  # Transition to State4
-        else:
-            logger.error("Failed to save data to database.")
-            self.machine.current_state = 'State5'  # Transition to State5
+            logger.error(f"Database error: {e}")
+            self.machine.current_state = 'State5'  # Übergang zu einem Fehlerzustand
 
 class State4(State):
     def run(self):

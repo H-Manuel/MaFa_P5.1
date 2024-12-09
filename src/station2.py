@@ -8,7 +8,7 @@ import os
 logger = logging.getLogger(__name__)
 
 # Create a logger
-log_file_path = os.path.expanduser('~/P5.1/src/station2.log')
+log_file_path = os.path.expanduser('~/MaFa_P5.1/src/station2.log')
 logging.basicConfig(filename=log_file_path, encoding='utf-8', level=logging.DEBUG)
 logger.setLevel(logging.DEBUG)  # Set the desired logging level
 
