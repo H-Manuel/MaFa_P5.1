@@ -8,4 +8,4 @@ Station2.py wurde erfolgreich mit Fehlermanagement als State-Machine eingebunden
 ![](https://cdn-0.plantuml.com/plantuml/png/VOynIyGm68Rt_egNZi8DTssN37B8NKKGbrCSn26qNvlWrnJIP1B_cPj_pFQi2Mfm2I5vNdYU_UIaTNxWZAbpS2EixfL3goqrJeyc0sR44KxBkNtDiDv4_ZWloK3w3ZNBgL6KPsy_-LtWTo9_k3dWbYOoVx0YO8N8wuztve5CJv1-mk4Ad1oLOLJEBhebgqPES5NWAf4VxUI8cL2JOh83SUjD_xLvkdZ6PdEvzeNG-BQ3-2x5qRv8Orp8YrG1WINrcixUeImI9GHYvM-mF8EBZC29J4kuausokb4kXFo39Bmh2DphWKQVygrMNxFCqQUi0nUjqtWPyUtYrYWctL7qJd_lvmO_y2S0)
 
 ### Station 3
-Station3.py erstellt bei erfolgreich abgefüllten Flaschen im Unterordner "QR_CODES" QR-Codes mit der jeweiligen Flaschennummer in der Dateibezeichnung. Zusätzlich liefert der QR-Code das jeweilige Rezept, die Flaschen_ID und das Tagged Date.  
+Die Datei Station3.py generiert bei erfolgreich abgefüllten Flaschen QR-Codes im Unterordner "QR_CODES". Der Dateiname enthält die jeweilige Flaschennummer. Die QR-Codes beinhalten zudem das zugehörige Rezept, die Flaschen-ID und das Tagged Date.
